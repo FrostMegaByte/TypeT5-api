@@ -5,6 +5,8 @@ import warnings
 
 import torch
 
+from api.api_models import API, APIResponse, Class, Function
+
 from .data import CtxArgs, src_to_chunks
 from .function_dataset import (
     SignatureMap,
@@ -193,7 +195,7 @@ class RolloutCtx:
         pre_args: PreprocessArgs,
         decode_order: "DecodingOrder",
         concurrency: int = DefaultWorkers,
-    ):
+    ) -> str:
         sigmap = dict[ProjectPath, ElemSignature]()
 
         def callback(e: PythonElem, types, sig: ElemSignature) -> None:
@@ -231,7 +233,7 @@ class RolloutCtx:
         progress_cbk: Callable[
             [PythonElem, Sequence[PythonType], ElemSignature], Any
         ] = lambda x, y, z: None,
-    ) -> RolloutPrediction:
+    ) -> str:
         """Note: when evaluating on dataset with ground truth labels, we need to
         first replace all labels with `SpecialNames.TypeMask` before feeding to
         this function.
@@ -258,6 +260,12 @@ class RolloutCtx:
         elem2preds = dict[ProjectPath, Sequence[PythonType]]()
         elem2inputs = dict[ProjectPath, dict]()
         mask_annot = cst.Annotation(cst.Name(SpecialNames.TypeMask))
+        
+        prev_module = ""
+        api_responses = []
+        classes = []
+        classes_by_name = {}
+        funcs = []
 
         # Parallelize computation between dependency-free elements
         for elem in to_visit:
@@ -332,6 +340,9 @@ class RolloutCtx:
                     )
                     pred_types.extend(preds[0])
                 elem2inputs[elem.path] = model_inputs[0]
+                
+                params_p = {}
+                ret_type_p = []
 
                 # update the signature with the predicted types
                 if isinstance(new_sig, VariableSignature):
@@ -347,10 +358,12 @@ class RolloutCtx:
                     n_pred = 0
                     for (n, a) in new_sig.params.items():
                         if a is None or is_mask_annot(a):
+                            params_p[n] = [[str(pred_types[n_pred]), 1.]]
                             new_type = cst.parse_expression(str(pred_types[n_pred]))
                             new_sig.params[n] = cst.Annotation(new_type)
                             n_pred += 1
                     if new_sig.returns is None or is_mask_annot(new_sig.returns):
+                        ret_type_p.append([str(pred_types[n_pred]), 1.])
                         new_sig.returns = cst.Annotation(
                             cst.parse_expression(str(pred_types[n_pred]))
                         )
@@ -365,8 +378,31 @@ class RolloutCtx:
             elem2preds[elem.path] = pred_types
             if model_inputs:
                 progress_cbk(elem, pred_types, new_sig)
+            
+            if not isinstance(elem_sig, FunctionSignature):
+                continue
+            
+            if elem.in_class:
+                if elem.parent_class in classes_by_name:
+                    classes_by_name[elem.parent_class].funcs.append(
+                        Function(elem.name, elem.path.path, params_p, ret_type_p)
+                    )
+                else:
+                    func = Function(elem.name, elem.path.path, params_p, ret_type_p)
+                    classes_by_name[elem.parent_class] = Class(elem.name, elem.path.path, [func])
+            else:
+                funcs.append(Function(elem.name, elem.path.path, params_p, ret_type_p))
+            
+            if prev_module != "" and prev_module != cur_module:
+                classes = list(classes_by_name.values())
+                api_responses.append(APIResponse(cur_module, classes, funcs))
+                classes_by_name = {}
+                funcs = []
+            prev_module = cur_module
+        
+        return json.dumps(API(api_responses).to_dict())
 
-        return RolloutPrediction(final_sigmap, elem2preds, elem2inputs, pred_sigmap)
+        # return RolloutPrediction(final_sigmap, elem2preds, elem2inputs, pred_sigmap)
 
 
 def is_mask_annot(a: cst.Annotation) -> bool:
