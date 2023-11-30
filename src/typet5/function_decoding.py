@@ -281,6 +281,14 @@ class RolloutCtx:
                 )
                 preamble_cache[cur_module] = preamble_tuple
             preamble, tokenized_preamble = preamble_cache[cur_module]
+            
+            # When the next module/file is processed
+            if prev_module != "" and prev_module != cur_module:
+                classes = list(classes_by_name.values())
+                file_path = str(project.root_dir / (cur_module.replace(".", "/") + ".py"))
+                api_responses.append(APIResponse(file_path, classes, funcs))
+                classes_by_name = {}
+                funcs = []
 
             # then, make all missing types in the signature a prediction target
             if isinstance(elem, PythonVariable):
@@ -393,12 +401,11 @@ class RolloutCtx:
             else:
                 funcs.append(Function(elem.name, elem.path.path, params_p, ret_type_p))
             
-            if prev_module != "" and prev_module != cur_module:
-                classes = list(classes_by_name.values())
-                api_responses.append(APIResponse(cur_module, classes, funcs))
-                classes_by_name = {}
-                funcs = []
             prev_module = cur_module
+        
+        classes = list(classes_by_name.values())
+        file_path = str(project.root_dir / (cur_module.replace(".", "/") + ".py"))
+        api_responses.append(APIResponse(file_path, classes, funcs))
         
         return json.dumps(API(api_responses).to_dict())
 
