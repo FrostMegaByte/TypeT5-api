@@ -25,9 +25,14 @@ class TypeT5Model:
     self.rctx = RolloutCtx(model=wrapper)
     self.pre_args = PreprocessArgs()
     self.decode_order = DecodingOrders.DoubleTraversal()
-
+  
   async def run_model(self) -> str:
-    project = PythonProject.parse_from_root(proj_root() / "data/ex_repo")
-    # rollout = await rctx.run_on_project(project, pre_args, decode_order)
+    project = PythonProject.parse_from_root(proj_root() / "data/code")
+    json = await self.rctx.run_on_project(project, self.pre_args, self.decode_order)
+    return json
+  
+  async def run_model_on_dir(self, project_directory) -> str:
+    project_directory = Path(project_directory)
+    project = PythonProject.parse_from_root(project_directory)
     json = await self.rctx.run_on_project(project, self.pre_args, self.decode_order)
     return json

@@ -1,4 +1,6 @@
-from flask import Flask, g
+import os
+from pathlib import Path
+from flask import Flask, request, jsonify, g
 from api.typet5_main import TypeT5Model
 
 app = Flask(__name__)
@@ -17,5 +19,20 @@ async def api():
     json_response = await g.typet5.run_model()
     return json_response
 
+@app.route('/api/<path:project_directory>')
+async def api_on_dir(project_directory):
+    if not project_directory:
+        return jsonify({'error': 'Missing project directory'}), 400
+
+    project_directory = Path(project_directory)
+    if not project_directory.is_dir():
+        return jsonify({'error': 'Invalid project directory'}), 400
+    
+    json_response = await g.typet5.run_model_on_dir(project_directory)
+    return jsonify(json_response)
+    # json_response = await g.typet5.run_model(project_directory)
+    # return json_response
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)

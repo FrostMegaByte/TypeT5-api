@@ -285,7 +285,7 @@ class RolloutCtx:
             # When the next module/file is processed
             if prev_module != "" and prev_module != cur_module:
                 classes = list(classes_by_name.values())
-                file_path = str(project.root_dir / (cur_module.replace(".", "/") + ".py"))
+                file_path = str(project.root_dir / (prev_module.replace(".", "/") + ".py"))
                 api_responses.append(APIResponse(file_path, classes, funcs))
                 classes_by_name = {}
                 funcs = []
@@ -404,7 +404,7 @@ class RolloutCtx:
             prev_module = cur_module
         
         classes = list(classes_by_name.values())
-        file_path = str(project.root_dir / (cur_module.replace(".", "/") + ".py"))
+        file_path = str(project.root_dir / (prev_module.replace(".", "/") + ".py"))
         api_responses.append(APIResponse(file_path, classes, funcs))
         
         return json.dumps(API(api_responses).to_dict())
