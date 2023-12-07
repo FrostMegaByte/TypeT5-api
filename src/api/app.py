@@ -16,7 +16,11 @@ async def home():
 
 @app.route('/api')
 async def api():
-    json_response = await g.typet5.run_model()
+    print("Running TypeT5 on data/code directory")
+    try:
+        json_response = await g.typet5.run_model()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     return json_response
 
 @app.route('/api/<path:project_directory>')
@@ -28,10 +32,12 @@ async def api_on_dir(project_directory):
     if not project_directory.is_dir():
         return jsonify({'error': 'Invalid project directory'}), 400
     
-    json_response = await g.typet5.run_model_on_dir(project_directory)
-    return jsonify(json_response)
-    # json_response = await g.typet5.run_model(project_directory)
-    # return json_response
+    print("Running TypeT5")
+    try:
+        json_response = await g.typet5.run_model_on_dir(project_directory)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    return json_response
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
