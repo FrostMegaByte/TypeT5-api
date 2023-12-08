@@ -275,6 +275,7 @@ class RolloutCtx:
             preamble, tokenized_preamble = preamble_cache[cur_module]
 
             # then, make all missing types in the signature a prediction target
+            # TODO: Might want to ignore variables to speed up TypeT5 as it is relatively slow
             if isinstance(elem, PythonVariable):
                 sig = elem.get_signature()
                 elem_sig = copy.deepcopy(sig)

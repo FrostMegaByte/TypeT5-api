@@ -15,10 +15,10 @@ class Function:
         
     def to_dict(self):
         return {
-            'name': self.name,
-            'q_name': self.q_name,
-            'params_p': self.params_p,
-            'ret_type_p': self.ret_type_p,
+            "name": self.name,
+            "q_name": self.q_name,
+            "params_p": self.params_p,
+            "ret_type_p": self.ret_type_p,
         }
 
 class Class:
@@ -29,32 +29,34 @@ class Class:
         
     def to_dict(self):
         return {
-            'name': self.name,
-            'q_name': self.q_name,
-            'funcs': [func.to_dict() for func in self.funcs],
+            "name": self.name,
+            "q_name": self.q_name,
+            "funcs": [func.to_dict() for func in self.funcs],
         }
 
 class APIResponse:
     def __init__(self, file_path, classes: List[Class], funcs: List[Function]):
         self.file_path = file_path
         self.response = {
-            'classes': [cls.to_dict() for cls in classes],
-            'funcs': [func.to_dict() for func in funcs]
+            "classes": [cls.to_dict() for cls in classes],
+            "funcs": [func.to_dict() for func in funcs]
         }
         
     def to_dict(self):
         return {
-            'file_path': self.file_path,
-            'response': self.response,
+            "file_path": self.file_path,
+            "response": self.response,
         }
         
 class API:
     def __init__(self, responses: List[APIResponse]):
+        self.error = None if len(responses) > 0 else "TypeT5 could not find any functions to annotate."
         self.responses = responses
         
     def to_dict(self):
         return {
-            'responses': [response.to_dict() for response in self.responses],
+            "error": self.error,
+            "responses": [response.to_dict() for response in self.responses],
         }
         
 def group_predictions_by_file(final_sigmap):
@@ -70,7 +72,7 @@ def group_predictions_by_file(final_sigmap):
 def create_api_response(predictions_by_file, project_directory):
     api_responses = []
     for file in predictions_by_file:
-        file_path = str(project_directory / (file.replace(".", "/") + ".py"))
+        file_path = str(file.replace(".", "/") + ".py")
         classes = {}
         funcs = []
         for location, type_prediction in predictions_by_file[file].items():
@@ -80,7 +82,7 @@ def create_api_response(predictions_by_file, project_directory):
                 
                 if type_prediction.in_class:
                     class_name = location.path.split(".")[-2]
-                    full_class_name = location.path.rsplit('.', 1)[0]
+                    full_class_name = location.path.rsplit(".", 1)[0]
                     if full_class_name in classes:
                         classes[full_class_name].funcs.append(function)
                     else:
