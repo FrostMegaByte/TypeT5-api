@@ -27,17 +27,17 @@ class TypeT5Model:
     self.pre_args = PreprocessArgs()
     self.decode_order = DecodingOrders.DoubleTraversal()
   
-  async def run_model(self) -> str:
+  async def run_model(self):
     project = PythonProject.parse_from_root(proj_root() / "data/code")
     rollout = await self.rctx.run_on_project(project, self.pre_args, self.decode_order)
     predictions_by_file = group_predictions_by_file(rollout.final_sigmap)
-    json = create_api_response(predictions_by_file, project.root_dir)
-    return json
+    response = create_api_response(predictions_by_file, project.root_dir)
+    return response
   
   async def run_model_on_dir(self, project_directory) -> str:
     project_directory = Path(project_directory)
     project = PythonProject.parse_from_root(project_directory)
     rollout = await self.rctx.run_on_project(project, self.pre_args, self.decode_order)
     predictions_by_file = group_predictions_by_file(rollout.final_sigmap)
-    json = create_api_response(predictions_by_file, project.root_dir)
-    return json
+    response = create_api_response(predictions_by_file, project.root_dir)
+    return response

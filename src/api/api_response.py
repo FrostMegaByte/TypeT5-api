@@ -93,7 +93,7 @@ def create_api_response(predictions_by_file, project_directory):
         if len(classes) > 0 or len(funcs) > 0:
             api_responses.append(APIResponse(file_path, list(classes.values()), funcs))
     api = API(api_responses).to_dict()
-    return json.dumps(api)
+    return api
 
 def node_to_code(node: cst.CSTNode):
     node_string = cst.Module([]).code_for_node(node)

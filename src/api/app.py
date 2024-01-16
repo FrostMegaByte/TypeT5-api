@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from flask import Flask, request, jsonify, g
+import time
+from flask import Flask, jsonify, g
 from api.typet5_main import TypeT5Model
 
 app = Flask(__name__)
@@ -12,16 +13,20 @@ def before_request():
 
 @app.route('/')
 async def home():
-    return "Hello, Flask!"
+    return "Welcome to the TypeT5 API! Visit /api to run TypeT5 on your provided project directory"
 
 @app.route('/api')
 async def api():
     print("Running TypeT5 on /data/code directory")
     try:
-        json_response = await g.typet5.run_model()
+        start_time = time.time()
+        response = await g.typet5.run_model()
+        finish_time = time.time() - start_time
+        response["time_taken"] = f"{finish_time:.2f} seconds"
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    return json_response
+    
+    return jsonify(response)
 
 @app.route('/api/<path:project_directory>')
 async def api_on_dir(project_directory):
@@ -34,10 +39,10 @@ async def api_on_dir(project_directory):
     
     print("Running TypeT5")
     try:
-        json_response = await g.typet5.run_model_on_dir(project_directory)
+        response = await g.typet5.run_model_on_dir(project_directory)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    return json_response
+    return response
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
