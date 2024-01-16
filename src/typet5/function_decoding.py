@@ -277,11 +277,13 @@ class RolloutCtx:
             # then, make all missing types in the signature a prediction target
             # TODO: Might want to ignore variables to speed up TypeT5 as it is relatively slow
             if isinstance(elem, PythonVariable):
-                sig = elem.get_signature()
-                elem_sig = copy.deepcopy(sig)
-                if sig.annot is None:
-                    elem_sig.annot = mask_annot
-                elem_map = {elem.path: elem_sig}
+                continue
+                # Skip calculating the type for variables and only do it for functions
+                # sig = elem.get_signature()
+                # elem_sig = copy.deepcopy(sig)
+                # if sig.annot is None:
+                #     elem_sig.annot = mask_annot
+                # elem_map = {elem.path: elem_sig}
             elif isinstance(elem, PythonFunction):
                 sig = elem.get_signature()
                 elem_sig = copy.deepcopy(sig)
@@ -336,13 +338,15 @@ class RolloutCtx:
 
                 # update the signature with the predicted types
                 if isinstance(new_sig, VariableSignature):
-                    assert new_sig.annot is None or is_mask_annot(
-                        new_sig.annot
-                    ), f"For {elem}, sig={new_sig}"
-                    assert_eq(len(pred_types), 1)
-                    new_sig.annot = cst.Annotation(
-                        cst.parse_expression(str(pred_types[0]))
-                    )
+                    continue
+                    # Skip calculating the type for variables and only do it for functions
+                    # assert new_sig.annot is None or is_mask_annot(
+                    #     new_sig.annot
+                    # ), f"For {elem}, sig={new_sig}"
+                    # assert_eq(len(pred_types), 1)
+                    # new_sig.annot = cst.Annotation(
+                    #     cst.parse_expression(str(pred_types[0]))
+                    # )
                 elif isinstance(elem, PythonFunction):
                     # assert len(pred_types) >= len(sig.params) + 1
                     n_pred = 0
