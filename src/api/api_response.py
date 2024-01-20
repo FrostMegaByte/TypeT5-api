@@ -69,7 +69,7 @@ def group_predictions_by_file(final_sigmap):
     return file_predictions
         
         
-def create_api_response(predictions_by_file, project_directory):
+def create_api_response(predictions_by_file):
     api_responses = []
     for file in predictions_by_file:
         file_path = str(file.replace(".", "/") + ".py")
@@ -107,5 +107,5 @@ def parse_function_signature(type_prediction):
     ret_type_p = []
     for param, annotation in type_prediction.params.items():
         params_p[param] = [[node_to_code(annotation.annotation), 1.0]]
-    ret_type_p.append([node_to_code(type_prediction.returns.annotation), 1.])
+    ret_type_p.append([node_to_code(type_prediction.returns.annotation), 1.0])
     return params_p, ret_type_p
