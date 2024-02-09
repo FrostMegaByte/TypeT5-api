@@ -23,6 +23,7 @@ class TypeT5Model:
     device = torch.device(f"cuda" if torch.cuda.is_available() else "cpu")
     wrapper.to(device)
     print("Model loaded")
+    print("Running on device:", device)
     
     self.rctx = RolloutCtx(model=wrapper)
     self.pre_args = PreprocessArgs()
